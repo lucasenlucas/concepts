@@ -1,0 +1,15 @@
+{
+  "name": "Adler Drink!",
+  "short_name": "Adler Drink!",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://storage.googleapis.com/gpt-engineer-file-uploads/MQHX1d6hSgOrerF9ENC6kenrKk92/20dc315d-5a02-4306-a2e1-0a65ad41ea8a?Expires=1771279876&GoogleAccessId=go-api-on-aws%40gpt-engineer-390607.iam.gserviceaccount.com&Signature=u3dMnVWOyv9jStBvnd5cPOryrehMksbzIGiiLCnHEEoMHrN%2FniwIP%2ByzRPaUFp7VWSwHNnS4Yt2MIcHGh1wbjPdvtGYbdK2KSxjQ5O3sSjsvhLR8Gf1U11sA1F7BDIFL3RrGxTAIQ7gmr0%2BVojSZS3ihaZeYaFpmYMxGcjvJKKKEXqunsCA8GWgSHPROUuYpTU2XcbUSYcjuFg8yC%2BV7VwD4WocIz7akiUOY7sldLqhJ590fPqBa4%2F9Ok1uOecNsxyF%2FVDNMHUcY3yTnf0LokZRELvD0bNg8L1lWcZ3sno7YKe7Q50tgD6KgAosD6YWS%2BGqq0NmV8CddSs%2FclyVW2w%3D%3D",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
