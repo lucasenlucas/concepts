@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title></title>
+  <title>.</title>
   <style>
     html, body {
       margin: 0;
@@ -37,7 +37,7 @@
 </head>
 <body>
   <canvas id="draw"></canvas>
-  <div id="hint">Klik om te tekenen • C = wissen • F = fullscreen</div>
+  <div id="hint"></div>
 
   <script>
     const canvas = document.getElementById("draw");
@@ -65,8 +65,8 @@
       ctx.lineWidth = 5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "#00aaff";
-      ctx.shadowColor = "#00aaff";
+      ctx.strokeStyle = "#ffffff";
+      ctx.shadowColor = "#ffffff";
       ctx.shadowBlur = 12;
     }
 
