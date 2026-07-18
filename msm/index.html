@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>.</title>
+
   <style>
     html, body {
       margin: 0;
@@ -20,6 +21,33 @@
       width: 100vw;
       height: 100vh;
       background: #000;
+      cursor: none;
+    }
+
+    #penCursor {
+      position: fixed;
+      width: 26px;
+      height: 6px;
+      background: #fff;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-3px, -3px) rotate(-45deg);
+      transform-origin: 3px 3px;
+      box-shadow: 0 0 8px rgba(255,255,255,0.9);
+      opacity: 0;
+    }
+
+    #penCursor::after {
+      content: "";
+      position: absolute;
+      right: -7px;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      border-left: 8px solid #fff;
     }
 
     #hint {
@@ -35,31 +63,21 @@
     }
   </style>
 </head>
+
 <body>
   <canvas id="draw"></canvas>
+  <div id="penCursor"></div>
   <div id="hint"></div>
 
   <script>
     const canvas = document.getElementById("draw");
     const ctx = canvas.getContext("2d");
     const hint = document.getElementById("hint");
+    const penCursor = document.getElementById("penCursor");
 
     let drawing = false;
-    let lastX = 0;
-    let lastY = 0;
-
-    function resize() {
-      const image = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
-      canvas.width = window.innerWidth * devicePixelRatio;
-      canvas.height = window.innerHeight * devicePixelRatio;
-      canvas.style.width = window.innerWidth + "px";
-      canvas.style.height = window.innerHeight + "px";
-      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-      try { ctx.putImageData(image, 0, 0); } catch(e) {}
-      setupPen();
-    }
+    let currentStroke = null;
+    const strokes = [];
 
     function setupPen() {
       ctx.lineWidth = 5;
@@ -70,62 +88,165 @@
       ctx.shadowBlur = 12;
     }
 
+    function resize() {
+      canvas.width = Math.round(window.innerWidth * devicePixelRatio);
+      canvas.height = Math.round(window.innerHeight * devicePixelRatio);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      redraw();
+    }
+
+    function clearBackground() {
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.restore();
+    }
+
+    function drawStroke(stroke) {
+      if (!stroke || stroke.length === 0) return;
+
+      setupPen();
+      ctx.beginPath();
+      ctx.moveTo(stroke[0].x, stroke[0].y);
+
+      if (stroke.length === 1) {
+        ctx.lineTo(stroke[0].x + 0.01, stroke[0].y + 0.01);
+      } else {
+        for (let i = 1; i < stroke.length; i++) {
+          ctx.lineTo(stroke[i].x, stroke[i].y);
+        }
+      }
+
+      ctx.stroke();
+    }
+
+    function redraw() {
+      clearBackground();
+
+      for (const stroke of strokes) {
+        drawStroke(stroke);
+      }
+
+      if (currentStroke) {
+        drawStroke(currentStroke);
+      }
+    }
+
     function pos(e) {
+      const touch = e.touches?.[0] || e.changedTouches?.[0];
+
       return {
-        x: e.clientX ?? e.touches?.[0]?.clientX,
-        y: e.clientY ?? e.touches?.[0]?.clientY
+        x: touch ? touch.clientX : e.clientX,
+        y: touch ? touch.clientY : e.clientY
       };
     }
 
     function start(e) {
+      if (e.button !== undefined && e.button !== 0) return;
+
       drawing = true;
-      const p = pos(e);
-      lastX = p.x;
-      lastY = p.y;
+      currentStroke = [pos(e)];
       hint.style.display = "none";
+      redraw();
     }
 
     function draw(e) {
-      if (!drawing) return;
-      const p = pos(e);
-      ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      lastX = p.x;
-      lastY = p.y;
+      updatePenCursor(e);
+
+      if (!drawing || !currentStroke) return;
+
+      currentStroke.push(pos(e));
+      redraw();
     }
 
     function stop() {
+      if (!drawing || !currentStroke) return;
+
       drawing = false;
+
+      if (currentStroke.length > 0) {
+        strokes.push(currentStroke);
+      }
+
+      currentStroke = null;
+      redraw();
+    }
+
+    function undo() {
+      if (strokes.length === 0) return;
+      strokes.pop();
+      redraw();
     }
 
     function clearCanvas() {
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-      setupPen();
+      strokes.length = 0;
+      currentStroke = null;
+      drawing = false;
+      redraw();
+    }
+
+    function updatePenCursor(e) {
+      if (e.touches) return;
+
+      penCursor.style.left = e.clientX + "px";
+      penCursor.style.top = e.clientY + "px";
+      penCursor.style.opacity = "1";
     }
 
     async function fullscreen() {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch (error) {
+        console.log("Fullscreen kon niet worden geopend:", error);
       }
     }
 
     canvas.addEventListener("mousedown", start);
     canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseenter", updatePenCursor);
+    canvas.addEventListener("mouseleave", () => {
+      penCursor.style.opacity = "0";
+    });
+
     window.addEventListener("mouseup", stop);
 
-    canvas.addEventListener("touchstart", (e) => { e.preventDefault(); start(e); }, { passive: false });
-    canvas.addEventListener("touchmove", (e) => { e.preventDefault(); draw(e); }, { passive: false });
-    window.addEventListener("touchend", stop);
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      start(e);
+    }, { passive: false });
 
+    canvas.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      draw(e);
+    }, { passive: false });
+
+    window.addEventListener("touchend", stop);
     window.addEventListener("resize", resize);
 
     window.addEventListener("keydown", (e) => {
-      if (e.key.toLowerCase() === "c") clearCanvas();
-      if (e.key.toLowerCase() === "f") fullscreen();
-      if (e.key === "Escape") hint.style.display = "none";
+      const key = e.key.toLowerCase();
+
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        undo();
+      }
+
+      if (key === "c") {
+        clearCanvas();
+      }
+
+      if (key === "f") {
+        fullscreen();
+      }
+
+      if (e.key === "Escape") {
+        hint.style.display = "none";
+      }
     });
 
     canvas.addEventListener("dblclick", fullscreen);
